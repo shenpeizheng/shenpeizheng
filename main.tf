@@ -1,3 +1,4 @@
+
 locals {
   lambda_function_name = "${var.resource_prefix}-landing-page"
   lambda_role_name     = "${var.resource_prefix}-lambda-role"
@@ -10,16 +11,14 @@ locals {
   }
 }
 
+# Package the Python Lambda function
 data "archive_file" "lambda_package" {
   type        = "zip"
   source_file = "${path.module}/lambda/index.py"
   output_path = "${path.module}/landing-page.zip"
 }
-resource "aws_lambda_function_url" "landing_page" {
-  function_name      = aws_lambda_function.landing_page.function_name
-  authorization_type = "NONE"
-}
 
+# Lambda execution role
 resource "aws_iam_role" "lambda_execution" {
   name = local.lambda_role_name
 
@@ -37,17 +36,20 @@ resource "aws_iam_role" "lambda_execution" {
   tags = local.common_tags
 }
 
+# Allow Lambda to write logs to CloudWatch
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   role       = aws_iam_role.lambda_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# CloudWatch log group
 resource "aws_cloudwatch_log_group" "lambda" {
   name              = local.lambda_log_group
   retention_in_days = 14
   tags              = local.common_tags
 }
 
+# Lambda function
 resource "aws_lambda_function" "landing_page" {
   function_name = local.lambda_function_name
   description   = "Independent sandbox landing page"
@@ -71,13 +73,14 @@ resource "aws_lambda_function" "landing_page" {
   ]
 }
 
+# Lambda Function URL
 resource "aws_lambda_function_url" "landing_page" {
-  function_name      = aws_lambda_function.landing_page.function_name
+  function_name = aws_lambda_function.landing_page.function_name
+
   authorization_type = var.enable_public_access ? "NONE" : "AWS_IAM"
 }
 
-# Public Function URLs require both permissions. These are created only
-# when enable_public_access is explicitly set to true.
+# Allow public access when explicitly enabled
 resource "aws_lambda_permission" "public_function_url" {
   count = var.enable_public_access ? 1 : 0
 
@@ -97,5 +100,13 @@ resource "aws_lambda_permission" "public_function_url_invoke" {
   principal               = "*"
   invoked_via_function_url = true
 
-  depends_on = [aws_lambda_permission.public_function_url]
+  depends_on = [
+    aws_lambda_permission.public_function_url
+  ]
+}
+
+# Display the Lambda Function URL
+output "landing_page_url" {
+  description = "URL of the Thinktank sandbox landing page"
+  value       = aws_lambda_function_url.landing_page.function_url
 }
