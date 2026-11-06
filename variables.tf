@@ -29,5 +29,5 @@ variable "resource_prefix" {
 variable "enable_public_access" {
   description = "Set true only if the landing page should be publicly accessible without AWS authentication."
   type        = bool
-  default     = false
+  default     = true
 }
