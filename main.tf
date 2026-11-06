@@ -15,7 +15,10 @@ data "archive_file" "lambda_package" {
   source_file = "${path.module}/lambda/index.py"
   output_path = "${path.module}/landing-page.zip"
 }
-
+resource "aws_lambda_function_url" "landing_page" {
+  function_name      = aws_lambda_function.landing_page.function_name
+  authorization_type = "NONE"
+}
 
 resource "aws_iam_role" "lambda_execution" {
   name = local.lambda_role_name
