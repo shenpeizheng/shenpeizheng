@@ -10,6 +10,11 @@ locals {
   }
 }
 
+data "archive_file" "lambda_package" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/index.py"
+  output_path = "${path.module}/landing-page.zip"
+}
 
 
 resource "aws_iam_role" "lambda_execution" {
